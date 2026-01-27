@@ -1,7 +1,7 @@
 [project]
-name = "a2"
+name = "corpus-analysis"
 version = "0.1.0"
-description = "Add your description here"
+description = "The goal of this project is to gain experience analyzing a corpus using various methods"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = []
