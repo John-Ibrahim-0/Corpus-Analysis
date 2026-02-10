@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
+import gensim
+from gensim import corpora
 import preprocessor
 
 def run_naive_bayes(df, vectorizer_type="count"):
@@ -47,3 +49,67 @@ def run_naive_bayes(df, vectorizer_type="count"):
     for cat, words in results.items():
         word_str = ", ".join([f"({w}, {s:.2f})" for w, s in words])
         print(f"{cat:<20} | {word_str}")
+
+def run_topic_modelling(df, num_topics=10):
+    """
+    Runs LDA Topic Modelling using Gensim.
+    """
+    print(f"\n--- Running LDA Topic Modelling ({num_topics} Topics) ---")
+
+    stops = preprocessor.get_custom_stopwords()
+
+    # tokenize for Gensim
+    texts = [
+        [word for word in preprocessor.clean_text(doc).split() if word not in stops and len(word) > 2]
+        for doc in df['text']
+    ]
+
+    # create dictionary and corpus
+    dictionary = corpora.Dictionary(texts)
+    dictionary.filter_extremes(no_below=5, no_above=0.5)
+    corpus = [dictionary.doc2bow(text) for text in texts]
+
+    # run LDA
+    lda_model = gensim.models.LdaModel(
+        corpus = corpus,
+        id2word = dictionary,
+        num_topics = num_topics,
+        passes = 15,
+        random_state = 42
+    )
+
+    # print topics
+    print("Topics Found:")
+
+    topn = 25
+
+    for index in range(num_topics):
+        topic_terms = lda_model.show_topic(index, topn=topn)
+
+        formatted_terms = [f"{word} ({prob:.3f})" for word, prob in topic_terms]
+        terms_string = ", ".join(formatted_terms)
+
+        print(f"\nTopic {index}: {terms_string}")
+    
+    # calculate topic distribution per category
+    print("\nTop Topics by Category:")
+    df["topic_distribution"] = [lda_model.get_document_topics(dictionary.doc2bow(text), minimum_probability=0) for text in texts]
+
+    for cat in df["category"].unique():
+        cat_docs = df[df["category"] == cat]["topic_distribution"]
+        avg_distribution = np.zeros(num_topics)
+        count = 0
+
+        for doc_list in cat_docs:
+            for topic_id, prob in doc_list:
+                avg_distribution[topic_id] += prob
+            count += 1
+        
+        if count > 0:
+            avg_distribution /= count
+        
+        # get top 3 topics
+        top_topics = np.argsort(avg_distribution)[::-1][:3]
+        print(f"\n{cat}:")
+        for t in top_topics:
+            print(f"  Topic {t} (Prob: {avg_distribution[t]:.4f})")
