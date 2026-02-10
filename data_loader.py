@@ -1,4 +1,5 @@
 import requests
+import re
 import pandas as pd
 
 def get_bible_corpus():
@@ -29,8 +30,33 @@ def get_bible_corpus():
     split_marker = "The New Testament of the King James Bible"
     parts = text.split(split_marker)
 
-    if len(parts) != 2:
+    if len(parts) != 3: # we expect 3 parts: ToC, OT, NT
         raise ValueError("Could not split the text into Old Testament and New Testament.")
     
-    ot_text = parts[0]
-    nt_text = parts[1]
+    ot_text = parts[1]
+    nt_text = parts[2]
+
+    dataset = []
+
+    # helper function to parse chapters
+    def parse_testament(raw_text, label):
+        pattern = r"\b\d+:1\b"
+
+        # split the text wherever a new chapter starts (verse 1)
+        chapters = re.split(pattern, raw_text)
+
+        for chapter in chapters[1:]:
+            cleaned_chapter = chapter.strip()
+            dataset.append({"text": cleaned_chapter, "category": label})
+    
+    # parse both testaments
+    print("Parsing the Old Testament...")
+    parse_testament(ot_text, "Old Testament")
+
+    print("Parsing the New Testament...")
+    parse_testament(nt_text, "New Testament")
+
+    df = pd.DataFrame(dataset)
+    print(f"Data loaded successfully: {len(df)} documents (chapters) found.")
+
+    return df
