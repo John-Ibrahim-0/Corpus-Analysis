@@ -20,5 +20,12 @@ def main():
     # Naive Bayes analysis with Count Vectorizer
     analysis.run_naive_bayes(df, vectorizer_type="count")
 
+    # Topic Modelling
+    analysis.run_topic_modelling(df, num_topics=15)
+
+    # Naive Bayes analysis with TF-IDF Vectorizer
+    print("\n=== Experimentation: Using TF-IDF Vectorization ===")
+    analysis.run_naive_bayes(df, vectorizer_type="tfidf")
+
 if __name__ == "__main__":
     main()
