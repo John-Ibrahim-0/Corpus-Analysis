@@ -12,7 +12,11 @@ def get_custom_stopwords():
     base_stops = set(stopwords.words('english'))
     archaic_stops = {"thou", "thee", "thy", "thine", "hath", "shalt", "wilt", "art", "dost", "doth", "ye", "lo", "would", "said", "unto", "came"}
 
-    return list(base_stops.union(archaic_stops))
+    all_stops = base_stops.union(archaic_stops)
+
+    clean_stops = {clean_text(word) for word in all_stops}
+
+    return list(clean_stops)
 
 def clean_text(text):
     """
